@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroSense — Smart Irrigation Monitoring</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --nav-bg: #0d1f12;
+            --hero-overlay: rgba(8, 28, 14, 0.72);
+            --surface: #ffffff;
+            --surface-2: #f5f7f5;
+            --surface-3: #eef2ee;
+            --border: rgba(0,0,0,0.08);
+            --text-primary: #111b13;
+            --text-secondary: #4a5c4d;
+            --text-muted: #7a8c7e;
+            --accent-green: #1f6b3a;
+            --accent-green-light: #e8f2eb;
+            --accent-blue: #1a4d72;
+            --accent-blue-light: #e6eff8;
+            --accent-amber: #7a4f10;
+            --accent-amber-light: #fdf3e3;
+            --accent-teal: #0f5a52;
+            --accent-teal-light: #e2f2f0;
+            --danger: #8b2020;
+            --danger-light: #fdeaea;
+            --warning: #7a5a00;
+            --warning-light: #fdf8e1;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--surface-2);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── NAVBAR ── */
+        .top-nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            background: var(--nav-bg);
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .nav-logo {
+            width: 30px;
+            height: 30px;
+        }
+
+        .nav-brand-text {
+            font-size: 15px;
+            font-weight: 600;
+            color: #d4ead8;
+            letter-spacing: 0.3px;
+        }
+
+        .nav-brand-text span {
+            color: #5db97d;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .nav-status {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 12px;
+            color: #8aab8e;
+            letter-spacing: 0.5px;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #4caf50;
+            animation: blink 2s ease infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .nav-time {
+            font-size: 12px;
+            color: #6a7d6d;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ── HERO ── */
+        .hero {
+            width: 100%;
+            height: 380px;
+            margin-top: 60px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-bg {
+            position: absolute;
+            inset: 0;
+            background-image: url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1800&q=80&auto=format');
+            background-size: cover;
+            background-position: center 40%;
+            filter: saturate(0.85);
+        }
+
+        .hero-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                to right,
+                rgba(8, 28, 14, 0.88) 0%,
+                rgba(8, 28, 14, 0.65) 55%,
+                rgba(8, 28, 14, 0.25) 100%
+            );
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            padding: 60px 40px;
+            max-width: 700px;
+        }
+
+        .hero-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(77, 175, 100, 0.18);
+            border: 1px solid rgba(77, 175, 100, 0.3);
+            color: #7fd49a;
+            font-size: 11px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 5px 14px;
+            border-radius: 100px;
+            margin-bottom: 18px;
+        }
+
+        .hero-title {
+            font-size: 38px;
+            font-weight: 300;
+            color: #ffffff;
+            line-height: 1.2;
+            margin-bottom: 14px;
+            letter-spacing: -0.5px;
+        }
+
+        .hero-title strong {
+            font-weight: 600;
+            color: #9de0b5;
+        }
+
+        .hero-sub {
+            font-size: 14px;
+            color: rgba(255,255,255,0.6);
+            line-height: 1.7;
+            max-width: 480px;
+            margin-bottom: 28px;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 32px;
+        }
+
+        .hero-stat {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .hero-stat-val {
+            font-size: 22px;
+            font-weight: 600;
+            color: #d4f0dd;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .hero-stat-lbl {
+            font-size: 11px;
+            color: rgba(255,255,255,0.45);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .hero-stat-sep {
+            width: 1px;
+            background: rgba(255,255,255,0.15);
+            align-self: stretch;
+        }
+
+        /* ── ALERT ── */
+        .alert-strip {
+            display: none;
+            background: #fff8f8;
+            border-top: 3px solid #c0392b;
+            border-bottom: 1px solid #f5c6c6;
+            padding: 12px 40px;
+            font-size: 13px;
+            color: var(--danger);
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-strip.visible { display: flex; }
+
+        /* ── MAIN LAYOUT ── */
+        .page-body {
+            padding: 32px 40px 60px;
+        }
+
+        .section-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        /* ── METRIC CARDS ── */
+        .metrics-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .metric-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 22px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            position: relative;
+            overflow: hidden;
+            transition: box-shadow 0.2s;
+        }
+
+        .metric-card:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+        }
+
+        .metric-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 3px;
+        }
+
+        .mc-soil::after { background: #2980b9; }
+        .mc-temp::after { background: #c0392b; }
+        .mc-hum::after { background: #27ae60; }
+        .mc-water::after { background: #148f77; }
+
+        .metric-icon-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .metric-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .ic-soil { background: var(--accent-blue-light); color: var(--accent-blue); }
+        .ic-temp { background: #fdecea; color: #b03020; }
+        .ic-hum { background: var(--accent-green-light); color: var(--accent-green); }
+        .ic-water { background: var(--accent-teal-light); color: var(--accent-teal); }
+
+        .metric-delta {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 100px;
+            font-weight: 500;
+        }
+
+        .delta-up { background: #e8f5eb; color: #1a6b35; }
+        .delta-down { background: #fdecea; color: #b03020; }
+        .delta-flat { background: var(--surface-3); color: var(--text-muted); }
+
+        .metric-val {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+            margin-top: 4px;
+        }
+
+        .metric-lbl {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .metric-bar-wrap {
+            margin-top: 14px;
+            height: 4px;
+            background: var(--surface-3);
+            border-radius: 100px;
+            overflow: hidden;
+        }
+
+        .metric-bar {
+            height: 100%;
+            border-radius: 100px;
+            transition: width 0.6s ease;
+        }
+
+        .bar-soil { background: #2980b9; }
+        .bar-temp { background: #c0392b; }
+        .bar-hum { background: #27ae60; }
+        .bar-water { background: #148f77; }
+
+        /* ── CHART SECTION ── */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .charts-bottom {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .chart-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 22px 24px;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-title-icon {
+            width: 28px;
+            height: 28px;
+            background: var(--surface-3);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .panel-badge {
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 100px;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        /* ── TABLE ── */
+        .table-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 32px;
+        }
+
+        .table-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .table-panel-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .tbl {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .tbl thead tr {
+            background: var(--surface-2);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tbl thead th {
+            padding: 11px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .tbl tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+
+        .tbl tbody tr:last-child { border-bottom: none; }
+
+        .tbl tbody tr:hover { background: var(--surface-2); }
+
+        .tbl td {
+            padding: 11px 16px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+
+        .tbl td strong { color: var(--text-primary); font-weight: 600; }
+
+        .device-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--surface-3);
+            border: 1px solid var(--border);
+            padding: 3px 10px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .sp-normal { background: var(--accent-green-light); color: var(--accent-green); }
+        .sp-warning { background: var(--warning-light); color: var(--warning); }
+        .sp-critical { background: var(--danger-light); color: var(--danger); }
+
+        .sp-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        /* ── FOOTER ── */
+        .page-footer {
+            border-top: 1px solid var(--border);
+            padding: 18px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--surface);
+        }
+
+        .footer-brand {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .footer-brand strong {
+            color: var(--text-secondary);
+        }
+
+        .footer-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .footer-sync {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .refresh-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: var(--accent-green);
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.15s;
+            letter-spacing: 0.3px;
+        }
+
+        .refresh-btn:hover {
+            background: #16572e;
+            transform: translateY(-1px);
+        }
+
+        /* ── SPINNER ── */
+        .spinner-wrap {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+
+        .spin {
+            width: 28px;
+            height: 28px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent-green);
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 1100px) {
+            .charts-grid { grid-template-columns: 1fr; }
+            .metrics-row { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 700px) {
+            .page-body { padding: 20px 16px 40px; }
+            .top-nav { padding: 0 16px; }
+            .hero-content { padding: 40px 16px; }
+            .hero-title { font-size: 26px; }
+            .metrics-row { grid-template-columns: 1fr 1fr; }
+            .charts-bottom { grid-template-columns: 1fr; }
+            .hero-stats { gap: 20px; }
+        }
+
+        /* scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #c8d4c9; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="top-nav">
+    <a class="nav-brand" href="#">
+        <svg class="nav-logo" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="15" cy="15" r="14" fill="rgba(77,175,100,0.15)" stroke="rgba(77,175,100,0.4)" stroke-width="1"/>
+            <path d="M15 8 C15 8 10 13 10 17 C10 20 12.5 22 15 22 C17.5 22 20 20 20 17 C20 13 15 8 15 8Z" fill="#5db97d"/>
+            <path d="M15 12 C15 12 12.5 15.5 12.5 17.5 C12.5 19 13.6 20 15 20" stroke="rgba(255,255,255,0.5)" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+        </svg>
+        <span class="nav-brand-text">Agro<span>Sense</span></span>
+    </a>
+    <div class="nav-right">
+       
+        <div class="nav-time" id="navTime">--:--:--</div>
+        <button class="refresh-btn" onclick="fetchData()">
+            <i class="fas fa-sync-alt" style="font-size:11px;"></i> Refresh
+        </button>
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+        <div class="hero-eyebrow">
+            <span class="status-dot"></span>
+            Real-time monitoring
+        </div>
+        <h1 class="hero-title">Smart Irrigation<br><strong>Control Center</strong></h1>
+        <p class="hero-sub">Live sensor telemetry from field devices — soil moisture, temperature, humidity, and reservoir levels updated every 5 seconds via AWS IoT.</p>
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <span class="hero-stat-val" id="heroDevices">—</span>
+                <span class="hero-stat-lbl">Active Devices</span>
+            </div>
+            <div class="hero-stat-sep"></div>
+            <div class="hero-stat">
+                <span class="hero-stat-val" id="heroReadings">—</span>
+                <span class="hero-stat-lbl">Total Readings</span>
+            </div>
+            <div class="hero-stat-sep"></div>
+            <div class="hero-stat">
+                <span class="hero-stat-val" id="heroAvgMoist">—</span>
+                <span class="hero-stat-lbl">Avg Moisture</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ALERT STRIP -->
+<div class="alert-strip" id="alertStrip">
+    <i class="fas fa-exclamation-circle"></i>
+    <strong>Alert —</strong>
+    <span id="alertMsg"></span>
+</div>
+
+<!-- MAIN BODY -->
+<main class="page-body">
+
+    <p class="section-label">Current sensor readings</p>
+
+    <!-- METRIC CARDS -->
+    <div class="metrics-row">
+        <div class="metric-card mc-soil">
+            <div class="metric-icon-row">
+                <div class="metric-icon ic-soil"><i class="fas fa-tint" style="font-size:14px;"></i></div>
+                <span class="metric-delta delta-flat" id="deltaSoil">—</span>
+            </div>
+            <div class="metric-val" id="soilMoisture">—</div>
+            <div class="metric-lbl">Soil Moisture</div>
+            <div class="metric-bar-wrap"><div class="metric-bar bar-soil" id="barSoil" style="width:0%"></div></div>
+        </div>
+        <div class="metric-card mc-temp">
+            <div class="metric-icon-row">
+                <div class="metric-icon ic-temp"><i class="fas fa-thermometer-half" style="font-size:14px;"></i></div>
+                <span class="metric-delta delta-flat" id="deltaTemp">—</span>
+            </div>
+            <div class="metric-val" id="temperature">—</div>
+            <div class="metric-lbl">Temperature</div>
+            <div class="metric-bar-wrap"><div class="metric-bar bar-temp" id="barTemp" style="width:0%"></div></div>
+        </div>
+        <div class="metric-card mc-hum">
+            <div class="metric-icon-row">
+                <div class="metric-icon ic-hum"><i class="fas fa-wind" style="font-size:14px;"></i></div>
+                <span class="metric-delta delta-flat" id="deltaHum">—</span>
+            </div>
+            <div class="metric-val" id="humidity">—</div>
+            <div class="metric-lbl">Air Humidity</div>
+            <div class="metric-bar-wrap"><div class="metric-bar bar-hum" id="barHum" style="width:0%"></div></div>
+        </div>
+        <div class="metric-card mc-water">
+            <div class="metric-icon-row">
+                <div class="metric-icon ic-water"><i class="fas fa-water" style="font-size:14px;"></i></div>
+                <span class="metric-delta delta-flat" id="deltaWater">—</span>
+            </div>
+            <div class="metric-val" id="waterLevel">—</div>
+            <div class="metric-lbl">Reservoir Level</div>
+            <div class="metric-bar-wrap"><div class="metric-bar bar-water" id="barWater" style="width:0%"></div></div>
+        </div>
+    </div>
+
+    <!-- CHARTS ROW 1 -->
+    <div class="charts-grid">
+        <div class="chart-panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <div class="panel-title-icon"><i class="fas fa-chart-area" style="font-size:12px;"></i></div>
+                    Soil Moisture — Last 10 readings
+                </div>
+                <span class="panel-badge">Rolling window</span>
+            </div>
+            <canvas id="moistureChart" height="220"></canvas>
+        </div>
+        <div class="chart-panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <div class="panel-title-icon"><i class="fas fa-chart-pie" style="font-size:12px;"></i></div>
+                    Current Distribution
+                </div>
+            </div>
+            <div id="pieChart" style="height:220px;"></div>
+        </div>
+    </div>
+
+    <!-- CHARTS ROW 2 -->
+    <div class="charts-bottom">
+        <div class="chart-panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <div class="panel-title-icon"><i class="fas fa-chart-line" style="font-size:12px;"></i></div>
+                    Temperature &amp; Humidity Trend
+                </div>
+                <span class="panel-badge">°C / %</span>
+            </div>
+            <canvas id="tempHumidityChart" height="200"></canvas>
+        </div>
+        <div class="chart-panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <div class="panel-title-icon"><i class="fas fa-chart-bar" style="font-size:12px;"></i></div>
+                    Sensor Snapshot
+                </div>
+            </div>
+            <canvas id="sensorOverviewChart" height="200"></canvas>
+        </div>
+    </div>
+
+    <!-- TABLE -->
+    <p class="section-label">Sensor reading log</p>
+    <div class="table-panel">
+        <div class="table-panel-header">
+            <div class="table-panel-title">Recent Records</div>
+            <div style="display:flex;align-items:center;gap:12px;">
+                <span id="recordCount" style="font-size:12px;color:var(--text-muted);">0 entries</span>
+            </div>
+        </div>
+        <div style="overflow-x:auto;">
+            <table class="tbl">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Device</th>
+                        <th>Soil Moisture</th>
+                        <th>Temperature</th>
+                        <th>Humidity</th>
+                        <th>Light Intensity</th>
+                        <th>Reservoir</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="8"><div class="spinner-wrap"><div class="spin"></div></div></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="page-footer">
+    <div class="footer-brand"><strong>AgroSense</strong> — Smart Irrigation Monitoring v2.0 &nbsp;|&nbsp; Powered by AWS IoT</div>
+    <div class="footer-right">
+        <div class="footer-sync">
+            <div class="status-dot"></div>
+            Last sync: <span id="lastUpdateTime" style="margin-left:4px;">—</span>
+        </div>
+    </div>
+</footer>
+
+<script>
+    let moistureChart, tempHumidityChart, sensorOverviewChart;
+    let prevLatest = null;
+
+    /* clock */
+    setInterval(() => {
+        document.getElementById('navTime').textContent = new Date().toLocaleTimeString('en-GB');
+    }, 1000);
+
+    function initCharts() {
+        const baseOpts = {
+            responsive: true,
+            maintainAspectRatio: true,
+            animation: { duration: 500 },
+            plugins: {
+                legend: { display: false },
+                tooltip: { mode: 'index', intersect: false, backgroundColor: '#fff', titleColor: '#111', bodyColor: '#555', borderColor: '#e0e0e0', borderWidth: 1 }
+            }
+        };
+
+        moistureChart = new Chart(document.getElementById('moistureChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Soil Moisture (%)',
+                    data: [],
+                    borderColor: '#2980b9',
+                    backgroundColor: 'rgba(41,128,185,0.07)',
+                    borderWidth: 2,
+                    tension: 0.45,
+                    fill: true,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#2980b9',
+                    pointBorderWidth: 2,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                ...baseOpts,
+                plugins: { ...baseOpts.plugins, legend: { display: true, labels: { color: '#888', font: { size: 12 }, boxWidth: 14 } } },
+                scales: {
+                    y: { beginAtZero: true, max: 100, grid: { color: '#f0f0f0' }, ticks: { color: '#999', font: { size: 11 } } },
+                    x: { grid: { display: false }, ticks: { color: '#999', font: { size: 10 } } }
+                }
+            }
+        });
+
+        tempHumidityChart = new Chart(document.getElementById('tempHumidityChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    { label: 'Temp (°C)', data: [], borderColor: '#c0392b', backgroundColor: 'rgba(192,57,43,0.06)', borderWidth: 2, tension: 0.45, fill: true, pointRadius: 3, pointBackgroundColor: '#fff', pointBorderColor: '#c0392b', pointBorderWidth: 2 },
+                    { label: 'Humidity (%)', data: [], borderColor: '#27ae60', backgroundColor: 'rgba(39,174,96,0.06)', borderWidth: 2, tension: 0.45, fill: true, pointRadius: 3, pointBackgroundColor: '#fff', pointBorderColor: '#27ae60', pointBorderWidth: 2 }
+                ]
+            },
+            options: {
+                ...baseOpts,
+                plugins: { ...baseOpts.plugins, legend: { display: true, labels: { color: '#888', font: { size: 11 }, boxWidth: 12, padding: 14 } } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#f0f0f0' }, ticks: { color: '#999', font: { size: 11 } } },
+                    x: { grid: { display: false }, ticks: { color: '#999', font: { size: 10 } } }
+                }
+            }
+        });
+
+        sensorOverviewChart = new Chart(document.getElementById('sensorOverviewChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['Soil Moisture', 'Temperature', 'Humidity', 'Reservoir'],
+                datasets: [{
+                    label: 'Value',
+                    data: [0, 0, 0, 0],
+                    backgroundColor: ['rgba(41,128,185,0.75)', 'rgba(192,57,43,0.75)', 'rgba(39,174,96,0.75)', 'rgba(20,143,119,0.75)'],
+                    borderRadius: 5,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                ...baseOpts,
+                scales: {
+                    y: { beginAtZero: true, max: 100, grid: { color: '#f0f0f0' }, ticks: { color: '#999', font: { size: 11 } } },
+                    x: { grid: { display: false }, ticks: { color: '#888', font: { size: 11 } } }
+                }
+            }
+        });
+    }
+
+    function getDelta(current, previous, unit) {
+        if (previous === null || previous === undefined) return { text: '—', cls: 'delta-flat' };
+        const diff = parseFloat(current) - parseFloat(previous);
+        if (Math.abs(diff) < 0.5) return { text: `±0${unit}`, cls: 'delta-flat' };
+        if (diff > 0) return { text: `+${diff.toFixed(1)}${unit}`, cls: 'delta-up' };
+        return { text: `${diff.toFixed(1)}${unit}`, cls: 'delta-down' };
+    }
+
+    function setDelta(id, text, cls) {
+        const el = document.getElementById(id);
+        el.textContent = text;
+        el.className = 'metric-delta ' + cls;
+    }
+
+    function updateDashboard(data) {
+        if (!data || data.length === 0) return;
+        const latest = data[0];
+
+        const soil  = parseFloat(latest.soil_moisture  || latest.SoilMoisture  || 0);
+        const temp  = parseFloat(latest.temperature    || latest.Temperature    || 0);
+        const hum   = parseFloat(latest.humidity       || latest.Humidity       || 0);
+        const water = parseFloat(latest.water_level    || latest.WaterLevel     || 0);
+
+        document.getElementById('soilMoisture').textContent = soil.toFixed(1) + '%';
+        document.getElementById('temperature').textContent  = temp.toFixed(1) + '°C';
+        document.getElementById('humidity').textContent     = hum.toFixed(1) + '%';
+        document.getElementById('waterLevel').textContent   = water.toFixed(1) + '%';
+
+        document.getElementById('barSoil').style.width  = Math.min(soil, 100) + '%';
+        document.getElementById('barTemp').style.width  = Math.min(temp, 100) + '%';
+        document.getElementById('barHum').style.width   = Math.min(hum, 100)  + '%';
+        document.getElementById('barWater').style.width = Math.min(water, 100) + '%';
+
+        if (prevLatest) {
+            const ps = parseFloat(prevLatest.soil_moisture || prevLatest.SoilMoisture || 0);
+            const pt = parseFloat(prevLatest.temperature   || prevLatest.Temperature  || 0);
+            const ph = parseFloat(prevLatest.humidity      || prevLatest.Humidity     || 0);
+            const pw = parseFloat(prevLatest.water_level   || prevLatest.WaterLevel   || 0);
+            const ds = getDelta(soil,  ps, '%');
+            const dt = getDelta(temp,  pt, '°C');
+            const dh = getDelta(hum,   ph, '%');
+            const dw = getDelta(water, pw, '%');
+            setDelta('deltaSoil',  ds.text, ds.cls);
+            setDelta('deltaTemp',  dt.text, dt.cls);
+            setDelta('deltaHum',   dh.text, dh.cls);
+            setDelta('deltaWater', dw.text, dw.cls);
+        }
+        prevLatest = latest;
+
+        /* alert */
+        const strip = document.getElementById('alertStrip');
+        if (soil < 20) {
+            document.getElementById('alertMsg').textContent = `Critical low soil moisture (${soil.toFixed(1)}%). Immediate irrigation required.`;
+            strip.classList.add('visible');
+        } else if (soil < 40) {
+            document.getElementById('alertMsg').textContent = `Low soil moisture (${soil.toFixed(1)}%). Irrigation recommended soon.`;
+            strip.classList.add('visible');
+        } else {
+            strip.classList.remove('visible');
+        }
+
+        /* hero stats */
+        const devices = [...new Set(data.map(d => d.device_id || d.DeviceId || 'farm-001'))].length;
+        const avgMoist = (data.reduce((s, d) => s + parseFloat(d.soil_moisture || d.SoilMoisture || 0), 0) / data.length).toFixed(1);
+        document.getElementById('heroDevices').textContent  = devices;
+        document.getElementById('heroReadings').textContent = data.length;
+        document.getElementById('heroAvgMoist').textContent = avgMoist + '%';
+
+        /* charts */
+        const last10 = data.slice(0, 10).reverse();
+        const labels  = last10.map(d => { const ts = d.timestamp || d.Timestamp; return ts ? new Date(ts).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'N/A'; });
+        moistureChart.data.labels = labels;
+        moistureChart.data.datasets[0].data = last10.map(d => parseFloat(d.soil_moisture || d.SoilMoisture || 0));
+        moistureChart.update();
+
+        tempHumidityChart.data.labels = labels;
+        tempHumidityChart.data.datasets[0].data = last10.map(d => parseFloat(d.temperature || d.Temperature || 0));
+        tempHumidityChart.data.datasets[1].data = last10.map(d => parseFloat(d.humidity || d.Humidity || 0));
+        tempHumidityChart.update();
+
+        sensorOverviewChart.data.datasets[0].data = [soil, temp, hum, water];
+        sensorOverviewChart.update();
+
+        Plotly.newPlot('pieChart', [{
+            values: [soil, temp, hum],
+            labels: ['Soil Moisture', 'Temperature', 'Humidity'],
+            type: 'pie',
+            hole: 0.45,
+            marker: { colors: ['#2980b9', '#c0392b', '#27ae60'] },
+            textinfo: 'percent',
+            textfont: { size: 12, color: '#fff' },
+            hovertemplate: '<b>%{label}</b><br>%{value:.1f}<extra></extra>'
+        }], {
+            height: 220,
+            margin: { t: 10, b: 10, l: 10, r: 10 },
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            showlegend: true,
+            legend: { font: { size: 11, color: '#888' }, orientation: 'h', x: 0.5, xanchor: 'center', y: -0.05 }
+        }, { displayModeBar: false });
+
+        updateTable(data);
+        document.getElementById('lastUpdateTime').textContent = new Date().toLocaleTimeString('en-GB');
+        document.getElementById('recordCount').textContent = data.length + ' entries';
+    }
+
+    function updateTable(data) {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        data.slice(0, 20).forEach(rec => {
+            const soil    = parseFloat(rec.soil_moisture  || rec.SoilMoisture  || 0);
+            const temp    = parseFloat(rec.temperature    || rec.Temperature    || 0);
+            const hum     = parseFloat(rec.humidity       || rec.Humidity       || 0);
+            const light   = parseFloat(rec.light_intensity|| rec.LightIntensity || 0);
+            const water   = parseFloat(rec.water_level    || rec.WaterLevel     || 0);
+            const ts      = rec.timestamp || rec.Timestamp;
+            const device  = rec.device_id || rec.DeviceId || 'farm-001';
+            let statusCls, statusLbl;
+            if (soil < 20)       { statusCls = 'sp-critical'; statusLbl = 'Critical'; }
+            else if (soil < 40)  { statusCls = 'sp-warning';  statusLbl = 'Warning';  }
+            else                 { statusCls = 'sp-normal';   statusLbl = 'Normal';   }
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="color:var(--text-muted)">${ts ? new Date(ts).toLocaleString('en-GB') : '—'}</td>
+                <td><span class="device-pill"><i class="fas fa-microchip" style="font-size:9px;"></i>${device}</span></td>
+                <td><strong>${soil.toFixed(1)}%</strong></td>
+                <td>${temp.toFixed(1)} °C</td>
+                <td>${hum.toFixed(1)}%</td>
+                <td>${light.toFixed(0)} lux</td>
+                <td>${water.toFixed(1)}%</td>
+                <td><span class="status-pill ${statusCls}"><span class="sp-dot"></span>${statusLbl}</span></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function fetchData() {
+        document.getElementById('tableBody').innerHTML = '<tr><td colspan="8"><div class="spinner-wrap"><div class="spin"></div></div></td></tr>';
+        $.ajax({
+            url: '/api/sensor-data',
+            method: 'GET',
+            timeout: 10000,
+            success: function(data) { updateDashboard(data); },
+            error: function() {
+                document.getElementById('tableBody').innerHTML = '<tr><td colspan="8" style="padding:20px 24px;color:var(--danger);font-size:13px;">Could not reach sensor API. Retrying automatically...</td></tr>';
+            }
+        });
+    }
+
+    setInterval(fetchData, 5000);
+
+    $(document).ready(function() {
+        initCharts();
+        fetchData();
+        document.getElementById('navTime').textContent = new Date().toLocaleTimeString('en-GB');
+    });
+</script>
+</body>
+</html>
